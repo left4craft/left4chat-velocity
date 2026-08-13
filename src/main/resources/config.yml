@@ -1,0 +1,48 @@
+# Left4Chat (Velocity)
+#
+# Everything below was hardcoded in the BungeeCord build. Fill in the Redis
+# section before first use -- the defaults point at localhost and will simply
+# log a warning on every event if nothing is listening there.
+
+redis:
+  host: 127.0.0.1
+  port: 6379
+  # Leave blank if the server has no requirepass / ACL user.
+  password: ''
+  username: ''
+  database: 0
+  timeout-millis: 2000
+  max-connections: 8
+  # Channel the Discord bot subscribes to for join/leave messages.
+  chat-channel: 'minecraft.chat'
+  # Key holding the JSON array of online players.
+  player-list-key: 'minecraft.players'
+
+player-list:
+  # How long to wait after a join/leave/switch before writing the key. The proxy
+  # player collection has not settled at the instant the event fires.
+  publish-delay-millis: 1000
+  # Republish on a timer regardless of events, so a dropped write cannot leave
+  # the Discord bot showing a stale roster. 0 disables it.
+  refresh-interval-seconds: 0
+
+motd:
+  enabled: true
+  # Sent on the player's first backend connection. Add a delay only if something
+  # else on the backend is clearing chat on join.
+  delay-millis: 0
+  lines:
+    - '&3&m-<----------------------------------->-'
+    - '&6Welcome back, &c{player}&6.'
+    - ''
+    - '&6Type &c/help &6to view the help menu.'
+    - ''
+    - '&6To switch server, type &c/game&6.'
+    - '&3&m-<----------------------------------->-'
+
+# {player} and {server} are substituted. Legacy '&' colour codes are supported.
+messages:
+  join: '&8[&2+&8] &7{player} joined'
+  leave: '&8[&4-&8] &7{player} left'
+  switched-to: '&8[&3<&8] &7{player} switched to {server}'
+  switched-from: '&8[&3>&8] &7{player} switched from {server}'
