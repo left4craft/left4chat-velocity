@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 )
 public final class Left4Chat {
 
-  static final String VERSION = "2.1.0";
+  static final String VERSION = "2.2.0";
 
   private final ProxyServer proxy;
   private final Logger logger;
@@ -60,6 +60,13 @@ public final class Left4Chat {
     this.playerList = new PlayerListPublisher(this, proxy, redis, config.playerList(), logger);
     this.playerList.start();
     new ServerAliasCommands(this, proxy, config.aliases(), config.messages(), logger).register();
+    if (config.lastServer().enabled()) {
+      proxy.getEventManager().register(this,
+          new LastServerTracker(this, proxy, redis, config.lastServer(), logger));
+      logger.info("Reconnecting players to their last server (excluded: {})",
+          config.lastServer().excludedServers().isEmpty()
+              ? "none" : String.join(", ", config.lastServer().excludedServers()));
+    }
     logger.info("Left4Chat {} enabled (redis {}:{})",
         VERSION, config.redis().host(), config.redis().port());
   }

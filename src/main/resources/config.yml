@@ -40,6 +40,15 @@ motd:
     - '&6To switch server, type &c/game&6.'
     - '&3&m-<----------------------------------->-'
 
+# Reconnect players to the server they were last on (the old proxy's
+# reconnect_yaml module). Last-seen servers are kept in a Redis hash, so they
+# survive proxy restarts. Excluded servers are neither recorded nor restored;
+# players coming from one land on the hub via the normal try order.
+last-server:
+  enabled: true
+  redis-key: 'minecraft.lastserver'
+  excluded-servers: []
+
 # Short server-switch commands (the old proxy's BungeeAliases). Each entry is
 # either `command: server` or a block with `server` and an optional
 # `permission`. Server names must match velocity.toml (case-insensitive).

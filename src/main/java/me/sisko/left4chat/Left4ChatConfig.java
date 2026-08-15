@@ -21,12 +21,17 @@ import org.yaml.snakeyaml.Yaml;
  * the four announcement prefixes and the MOTD body.
  */
 public record Left4ChatConfig(
-    Redis redis, PlayerList playerList, Motd motd, Messages messages, List<Alias> aliases) {
+    Redis redis, PlayerList playerList, Motd motd, Messages messages, List<Alias> aliases,
+    LastServer lastServer) {
 
   private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
   /** A chat command that connects the player to a server, e.g. /hub. */
   public record Alias(String command, String server, String permission) {
+  }
+
+  /** Reconnect-to-last-server behaviour (the old proxy's reconnect_yaml). */
+  public record LastServer(boolean enabled, String key, List<String> excludedServers) {
   }
 
   // The old proxy's BungeeAliases config, verbatim.
@@ -186,7 +191,15 @@ public record Left4ChatConfig(
             string(messages, "alias-already-connected", "&6You are already connected to &c{server}&6."),
             string(messages, "alias-no-permission", "&cYou do not have permission to connect to {server}"),
             string(messages, "alias-unknown-server", "&c{server} is not available right now.")),
-        aliases(root));
+        aliases(root),
+        lastServer(section(root, "last-server")));
+  }
+
+  private static LastServer lastServer(Map<String, Object> section) {
+    return new LastServer(
+        bool(section, "enabled", true),
+        string(section, "redis-key", "minecraft.lastserver"),
+        strings(section, "excluded-servers", List.of()));
   }
 
   /**

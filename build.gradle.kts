@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.sisko"
-version = "2.1.0"
+version = "2.2.0"
 description = "Cross-server join/leave/switch announcements, server alias commands, and Redis presence bridge for the Left4Craft proxy"
 
 java {

@@ -69,6 +69,26 @@ final class RedisBridge implements AutoCloseable {
     run("player list update", redis -> redis.set(playerListKey, json));
   }
 
+  /** Writes one field of a hash; best-effort like everything else here. */
+  void hashSet(String key, String field, String value) {
+    run("hash update of " + key, redis -> redis.hset(key, field, value));
+  }
+
+  /**
+   * Reads one field of a hash.
+   *
+   * @return the value, or {@code null} if unset or Redis is unreachable --
+   *     callers treat both the same way, as "nothing stored"
+   */
+  String hashGet(String key, String field) {
+    try {
+      return client.hget(key, field);
+    } catch (Exception e) {
+      logger.warn("Redis hash read of {} failed: {}", key, e.toString());
+      return null;
+    }
+  }
+
   private void run(String what, Consumer<RedisClient> action) {
     try {
       action.accept(client);
