@@ -30,13 +30,13 @@ import org.slf4j.Logger;
     id = "left4chat",
     name = "Left4Chat",
     version = Left4Chat.VERSION,
-    description = "Network join/leave/switch announcements and the Redis presence bridge",
+    description = "Network join/leave/switch announcements, server alias commands, and the Redis presence bridge",
     authors = {"sisko"},
     dependencies = {@Dependency(id = "litebans")}
 )
 public final class Left4Chat {
 
-  static final String VERSION = "2.0.0";
+  static final String VERSION = "2.1.0";
 
   private final ProxyServer proxy;
   private final Logger logger;
@@ -59,6 +59,7 @@ public final class Left4Chat {
     this.redis = new RedisBridge(config.redis(), logger);
     this.playerList = new PlayerListPublisher(this, proxy, redis, config.playerList(), logger);
     this.playerList.start();
+    new ServerAliasCommands(this, proxy, config.aliases(), config.messages(), logger).register();
     logger.info("Left4Chat {} enabled (redis {}:{})",
         VERSION, config.redis().host(), config.redis().port());
   }

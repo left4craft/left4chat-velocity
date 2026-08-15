@@ -4,8 +4,8 @@ plugins {
 }
 
 group = "me.sisko"
-version = "2.0.0"
-description = "Cross-server join/leave/switch announcements and Redis presence bridge for the Left4Craft proxy"
+version = "2.1.0"
+description = "Cross-server join/leave/switch announcements, server alias commands, and Redis presence bridge for the Left4Craft proxy"
 
 java {
     // Velocity 4.0.0's own class files are major version 69 (Java 25), so the

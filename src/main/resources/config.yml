@@ -40,9 +40,26 @@ motd:
     - '&6To switch server, type &c/game&6.'
     - '&3&m-<----------------------------------->-'
 
+# Short server-switch commands (the old proxy's BungeeAliases). Each entry is
+# either `command: server` or a block with `server` and an optional
+# `permission`. Server names must match velocity.toml (case-insensitive).
+aliases:
+  hub: hub
+  lobby: hub
+  survival: survival
+  creative: creative
+  partygames: partygames
+  build:
+    server: build
+    permission: left4craft.build
+
 # {player} and {server} are substituted. Legacy '&' colour codes are supported.
 messages:
   join: '&8[&2+&8] &7{player} joined'
   leave: '&8[&4-&8] &7{player} left'
   switched-to: '&8[&3<&8] &7{player} switched to {server}'
   switched-from: '&8[&3>&8] &7{player} switched from {server}'
+  alias-connecting: '&6Switching to &c{server}&6.'
+  alias-already-connected: '&6You are already connected to &c{server}&6.'
+  alias-no-permission: '&cYou do not have permission to connect to {server}'
+  alias-unknown-server: '&c{server} is not available right now.'

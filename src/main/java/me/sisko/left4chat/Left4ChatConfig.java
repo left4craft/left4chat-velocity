@@ -20,9 +20,23 @@ import org.yaml.snakeyaml.Yaml;
  * Everything the original plugin hardcoded: the Redis endpoint and credentials,
  * the four announcement prefixes and the MOTD body.
  */
-public record Left4ChatConfig(Redis redis, PlayerList playerList, Motd motd, Messages messages) {
+public record Left4ChatConfig(
+    Redis redis, PlayerList playerList, Motd motd, Messages messages, List<Alias> aliases) {
 
   private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
+
+  /** A chat command that connects the player to a server, e.g. /hub. */
+  public record Alias(String command, String server, String permission) {
+  }
+
+  // The old proxy's BungeeAliases config, verbatim.
+  private static final List<Alias> DEFAULT_ALIASES = List.of(
+      new Alias("hub", "hub", null),
+      new Alias("lobby", "hub", null),
+      new Alias("survival", "survival", null),
+      new Alias("creative", "creative", null),
+      new Alias("partygames", "partygames", null),
+      new Alias("build", "build", "left4craft.build"));
 
   public record Redis(
       String host,
@@ -46,7 +60,15 @@ public record Left4ChatConfig(Redis redis, PlayerList playerList, Motd motd, Mes
     }
   }
 
-  public record Messages(String join, String leave, String switchedTo, String switchedFrom) {
+  public record Messages(
+      String join,
+      String leave,
+      String switchedTo,
+      String switchedFrom,
+      String aliasConnecting,
+      String aliasAlreadyConnected,
+      String aliasNoPermission,
+      String aliasUnknownServer) {
 
     public Component join(String player) {
       return format(join, player, null);
@@ -64,8 +86,31 @@ public record Left4ChatConfig(Redis redis, PlayerList playerList, Motd motd, Mes
       return format(switchedFrom, player, server);
     }
 
+    public Component aliasConnecting(String server) {
+      return format(aliasConnecting, null, server);
+    }
+
+    public Component aliasAlreadyConnected(String server) {
+      return format(aliasAlreadyConnected, null, server);
+    }
+
+    public Component aliasNoPermission(String server) {
+      return format(aliasNoPermission, null, server);
+    }
+
+    public Component aliasUnknownServer(String server) {
+      return format(aliasUnknownServer, null, server);
+    }
+
+    public Component playersOnly() {
+      return Component.text("Only players can use this command.");
+    }
+
     private static Component format(String template, String player, String server) {
-      String out = template.replace("{player}", player);
+      String out = template;
+      if (player != null) {
+        out = out.replace("{player}", player);
+      }
       if (server != null) {
         out = out.replace("{server}", server);
       }
@@ -136,7 +181,39 @@ public record Left4ChatConfig(Redis redis, PlayerList playerList, Motd motd, Mes
             string(messages, "join", "&8[&2+&8] &7{player} joined"),
             string(messages, "leave", "&8[&4-&8] &7{player} left"),
             string(messages, "switched-to", "&8[&3<&8] &7{player} switched to {server}"),
-            string(messages, "switched-from", "&8[&3>&8] &7{player} switched from {server}")));
+            string(messages, "switched-from", "&8[&3>&8] &7{player} switched from {server}"),
+            string(messages, "alias-connecting", "&6Switching to &c{server}&6."),
+            string(messages, "alias-already-connected", "&6You are already connected to &c{server}&6."),
+            string(messages, "alias-no-permission", "&cYou do not have permission to connect to {server}"),
+            string(messages, "alias-unknown-server", "&c{server} is not available right now.")),
+        aliases(root));
+  }
+
+  /**
+   * Parses the {@code aliases} section: a mapping of command name to either a
+   * plain server name or a {@code {server, permission}} block. A missing or
+   * malformed section falls back to the old proxy's BungeeAliases setup.
+   */
+  private static List<Alias> aliases(Map<String, Object> root) {
+    Object value = root.get("aliases");
+    if (!(value instanceof Map<?, ?> section) || section.isEmpty()) {
+      return DEFAULT_ALIASES;
+    }
+    List<Alias> out = new ArrayList<>(section.size());
+    for (Map.Entry<?, ?> entry : section.entrySet()) {
+      String command = String.valueOf(entry.getKey()).toLowerCase().replaceFirst("^/", "");
+      if (entry.getValue() instanceof Map<?, ?>) {
+        Map<String, Object> block = asMap(entry.getValue());
+        String permission = string(block, "permission", "");
+        out.add(new Alias(
+            command,
+            string(block, "server", command),
+            permission.isEmpty() ? null : permission));
+      } else {
+        out.add(new Alias(command, String.valueOf(entry.getValue()), null));
+      }
+    }
+    return List.copyOf(out);
   }
 
   @SuppressWarnings("unchecked")
