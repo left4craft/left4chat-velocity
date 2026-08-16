@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.sisko"
-version = "2.2.0"
+version = "2.3.0"
 description = "Cross-server join/leave/switch announcements, server alias commands, and Redis presence bridge for the Left4Craft proxy"
 
 java {
@@ -24,6 +24,13 @@ dependencies {
     // package lifted straight out of LiteBans.jar 2.19.0. Regenerate with:
     //   unzip -q LiteBans.jar 'litebans/api/*' -d /tmp/lb && (cd /tmp/lb && jar cf litebans-api-<ver>.jar litebans)
     compileOnly(files("libs/litebans-api-2.19.0.jar"))
+
+    // NuVotifier's JitPack builds have been broken for every 2.7.x tag, so this
+    // is the Vote model and Velocity event lifted from the release jar:
+    //   curl -LO https://github.com/NuVotifier/NuVotifier/releases/download/v2.7.3/nuvotifier.jar
+    //   unzip nuvotifier.jar 'com/vexsoftware/votifier/velocity/event/*' 'com/vexsoftware/votifier/model/Vote.class' -d nv
+    //   (cd nv && jar cf ../nuvotifier-api-<ver>.jar com)
+    compileOnly(files("libs/nuvotifier-api-2.7.3.jar"))
 
     implementation("redis.clients:jedis:8.0.0")
 

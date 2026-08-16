@@ -30,13 +30,16 @@ import org.slf4j.Logger;
     id = "left4chat",
     name = "Left4Chat",
     version = Left4Chat.VERSION,
-    description = "Network join/leave/switch announcements, server alias commands, and the Redis presence bridge",
+    description = "Network join/leave/switch announcements, server alias commands, vote rewards, and the Redis presence bridge",
     authors = {"sisko"},
-    dependencies = {@Dependency(id = "litebans")}
+    dependencies = {
+        @Dependency(id = "litebans"),
+        @Dependency(id = "nuvotifier", optional = true)
+    }
 )
 public final class Left4Chat {
 
-  static final String VERSION = "2.2.0";
+  static final String VERSION = "2.3.0";
 
   private final ProxyServer proxy;
   private final Logger logger;
@@ -66,6 +69,18 @@ public final class Left4Chat {
       logger.info("Reconnecting players to their last server (excluded: {})",
           config.lastServer().excludedServers().isEmpty()
               ? "none" : String.join(", ", config.lastServer().excludedServers()));
+    }
+    if (config.votes().enabled()) {
+      // VoteListener's event signature comes out of NuVotifier's jar, so the
+      // class must not even be loaded unless the plugin is actually there.
+      if (proxy.getPluginManager().getPlugin("nuvotifier").isPresent()) {
+        proxy.getEventManager().register(this,
+            new VoteListener(this, proxy, redis, config.votes(), logger));
+        logger.info("Vote rewards enabled (commands on: {})",
+            String.join(", ", config.votes().commands().keySet()));
+      } else {
+        logger.warn("Vote rewards are enabled in config.yml but NuVotifier is not installed");
+      }
     }
     logger.info("Left4Chat {} enabled (redis {}:{})",
         VERSION, config.redis().host(), config.redis().port());

@@ -49,6 +49,22 @@ last-server:
   redis-key: 'minecraft.lastserver'
   excluded-servers: []
 
+# Vote rewards. Requires NuVotifier on this proxy; when it receives a vote,
+# the broadcast is announced to the whole network and each server listed under
+# `commands` has its console commands published over Redis to the Paper-side
+# Left4Chat console relay (minecraft.console.<server>.in), which runs them.
+# {player} and {service} are substituted in the broadcast and the commands.
+votes:
+  enabled: true
+  broadcast: '&d{player} &avoted on &d{service} &aand got &2$100 &ain game!'
+  # Must match the Paper-side Left4Chat's redis.keys.console-channel-format.
+  console-channel-format: 'minecraft.console.{server}.in'
+  # Server name -> console command(s) to run there. Server names must match the
+  # Paper-side Left4Chat's server-name, not necessarily velocity.toml.
+  commands:
+    survival:
+      - 'eco give {player} 100'
+
 # Short server-switch commands (the old proxy's BungeeAliases). Each entry is
 # either `command: server` or a block with `server` and an optional
 # `permission`. Server names must match velocity.toml (case-insensitive).

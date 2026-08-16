@@ -18,6 +18,18 @@ Unchanged from the Bungee version:
 - Sends the welcome MOTD on first connect.
 - Suppresses all of the above for players LiteBans is about to kick.
 
+Added since the port:
+
+- Server alias commands (`/hub`, `/survival`, ...) — the old proxy's
+  BungeeAliases plugin, folded in.
+- Reconnects players to the server they were last on, via a Redis hash.
+- Vote rewards: when NuVotifier (running on this proxy) receives a vote, a
+  configurable message is broadcast network-wide and configurable console
+  commands are published to `minecraft.console.<server>.in`, where the
+  Paper-side Left4Chat's console relay runs them. By default the survival
+  server runs `eco give <player> 100`. Requires NuVotifier on the proxy;
+  without it the feature logs a warning and stays off.
+
 ## Building
 
 Needs JDK 25 — Velocity 4.0.0's class files are major version 69, so an older
@@ -39,6 +51,17 @@ when LiteBans is upgraded:
 ```sh
 unzip -q LiteBans.jar 'litebans/api/*' -d /tmp/lb
 (cd /tmp/lb && jar cf litebans-api-<version>.jar litebans)
+```
+
+`libs/nuvotifier-api-2.7.3.jar` is the `Vote` model and Velocity `VotifierEvent`
+lifted out of the NuVotifier release jar, because NuVotifier's JitPack builds
+are broken for every 2.7.x tag. Regenerate it when NuVotifier is upgraded:
+
+```sh
+curl -LO https://github.com/NuVotifier/NuVotifier/releases/download/v<version>/nuvotifier.jar
+unzip -q nuvotifier.jar 'com/vexsoftware/votifier/velocity/event/*' \
+    'com/vexsoftware/votifier/model/Vote.class' -d /tmp/nv
+(cd /tmp/nv && jar cf nuvotifier-api-<version>.jar com)
 ```
 
 ## Decompiled original

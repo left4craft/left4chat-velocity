@@ -60,8 +60,12 @@ final class RedisBridge implements AutoCloseable {
     JsonObject json = new JsonObject();
     json.addProperty("type", type);
     json.addProperty("name", playerName);
-    String payload = json.toString();
-    run("publish " + type, redis -> redis.publish(chatChannel, payload));
+    publish(chatChannel, json.toString());
+  }
+
+  /** Publishes a raw message on an arbitrary channel; best-effort like the rest. */
+  void publish(String channel, String message) {
+    run("publish to " + channel, redis -> redis.publish(channel, message));
   }
 
   /** Overwrites the player-list key with the supplied JSON array. */

@@ -22,7 +22,7 @@ import org.yaml.snakeyaml.Yaml;
  */
 public record Left4ChatConfig(
     Redis redis, PlayerList playerList, Motd motd, Messages messages, List<Alias> aliases,
-    LastServer lastServer) {
+    LastServer lastServer, Votes votes) {
 
   private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
@@ -32,6 +32,31 @@ public record Left4ChatConfig(
 
   /** Reconnect-to-last-server behaviour (the old proxy's reconnect_yaml). */
   public record LastServer(boolean enabled, String key, List<String> excludedServers) {
+  }
+
+  /**
+   * Vote rewards. When NuVotifier hands the proxy a vote, {@code broadcast} is
+   * announced network-wide and each server in {@code commands} gets its console
+   * commands published on the Paper-side Left4Chat's console relay channel.
+   */
+  public record Votes(
+      boolean enabled,
+      String broadcast,
+      String consoleChannelFormat,
+      Map<String, List<String>> commands) {
+
+    public Component broadcast(String player, String service) {
+      return LEGACY.deserialize(substitute(broadcast, player, service));
+    }
+
+    /** The Redis channel the given server's console relay listens on. */
+    public String consoleChannel(String server) {
+      return consoleChannelFormat.replace("{server}", server);
+    }
+
+    public static String substitute(String template, String player, String service) {
+      return template.replace("{player}", player).replace("{service}", service);
+    }
   }
 
   // The old proxy's BungeeAliases config, verbatim.
@@ -192,7 +217,43 @@ public record Left4ChatConfig(
             string(messages, "alias-no-permission", "&cYou do not have permission to connect to {server}"),
             string(messages, "alias-unknown-server", "&c{server} is not available right now.")),
         aliases(root),
-        lastServer(section(root, "last-server")));
+        lastServer(section(root, "last-server")),
+        votes(section(root, "votes")));
+  }
+
+  private static Votes votes(Map<String, Object> section) {
+    return new Votes(
+        bool(section, "enabled", true),
+        string(section, "broadcast",
+            "&d{player} &avoted on &d{service} &aand got &2$100 &ain game!"),
+        string(section, "console-channel-format", "minecraft.console.{server}.in"),
+        voteCommands(section.get("commands")));
+  }
+
+  /**
+   * Parses the {@code votes.commands} section: a mapping of server name to a
+   * command or list of commands to run on that server's console.
+   */
+  private static Map<String, List<String>> voteCommands(Object value) {
+    if (!(value instanceof Map<?, ?> section) || section.isEmpty()) {
+      return Map.of("survival", List.of("eco give {player} 100"));
+    }
+    Map<String, List<String>> out = new LinkedHashMap<>();
+    for (Map.Entry<?, ?> entry : section.entrySet()) {
+      String server = String.valueOf(entry.getKey());
+      if (entry.getValue() instanceof List<?> list) {
+        List<String> commands = new ArrayList<>(list.size());
+        for (Object command : list) {
+          if (command != null) {
+            commands.add(String.valueOf(command));
+          }
+        }
+        out.put(server, List.copyOf(commands));
+      } else if (entry.getValue() != null) {
+        out.put(server, List.of(String.valueOf(entry.getValue())));
+      }
+    }
+    return Map.copyOf(out);
   }
 
   private static LastServer lastServer(Map<String, Object> section) {
